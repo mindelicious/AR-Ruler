@@ -15,6 +15,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     @IBOutlet var sceneView: ARSCNView!
     
     var dotNodes = [SCNNode]()
+    var textNode = SCNNode()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,6 +46,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        if dotNodes.count >= 2 {
+            for dot in dotNodes {
+                dot.removeFromParentNode()
+            }
+            dotNodes = [SCNNode]()
+        }
+        
         if let touchLocation = touches.first?.location(in: sceneView) {
             let hitTestResults = sceneView.hitTest(touchLocation, types: .featurePoint)
             
@@ -63,7 +71,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         let dotNode = SCNNode(geometry: dotGeometry)
         
-        dotNode.position = SCNVector3(hitResult.worldTransform.columns.3.x, hitResult.worldTransform.columns.3.y, hitResult.worldTransform.columns.3.y)
+        dotNode.position = SCNVector3(hitResult.worldTransform.columns.3.x, hitResult.worldTransform.columns.3.y, hitResult.worldTransform.columns.3.z)
         
         sceneView.scene.rootNode.addChildNode(dotNode)
         
@@ -78,9 +86,30 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 pow(end.position.y - start.position.y, 2) +
                 pow(end.position.z - start.position.z, 2)
             )
+            let distanceInCm = round(distance * 100)
             
-            print(abs(distance))
+            updateText(text: "\(abs(distanceInCm))" + "cm", atPosition: end.position)
         }
     }
+    func updateText(text: String, atPosition position: SCNVector3) {
+        
+        if let camera = sceneView.pointOfView {
+            textNode.orientation = camera.orientation
+        }
+        
+        textNode.removeFromParentNode()
+        
+        let textGeometry = SCNText(string: text, extrusionDepth: 1.0)
+
+            textGeometry.firstMaterial?.diffuse.contents = UIColor.purple
+            
+            textNode = SCNNode(geometry: textGeometry)
+            
+            textNode.position = SCNVector3(position.x, position.y + 0.01, position.z)
+        
+            textNode.scale = SCNVector3(0.01, 0.01, 0.01)
+            sceneView.scene.rootNode.addChildNode(textNode)
+        }
+    
     
 }
